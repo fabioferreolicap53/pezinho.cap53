@@ -184,19 +184,19 @@ export function PrintShipping() {
       {/* Print Document Area */}
       <div className="max-w-[850px] mx-auto bg-white shadow-2xl print:shadow-none print:max-w-full overflow-hidden border border-slate-200 print:border-none">
         {/* Header Banner - Optimized for ink saving */}
-        <div className="bg-[#001b3d] print:bg-white p-4 flex justify-between items-center text-white print:text-[#001b3d] relative overflow-hidden print:border-b-2 print:border-[#001b3d]">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24 print:hidden"></div>
+        <div className="bg-white p-4 flex justify-between items-center text-[#001b3d] relative overflow-hidden border-b-2 border-[#001b3d]">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-full -mr-24 -mt-24 print:hidden"></div>
           
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 bg-white print:bg-white p-1 rounded-lg shadow-xl print:shadow-none flex items-center justify-center border print:border-[#001b3d]">
-              <div className="w-full h-full bg-[#001b3d] print:bg-white rounded-lg flex items-center justify-center font-black text-white print:text-[#001b3d] text-xl italic">
+            <div className="w-12 h-12 bg-white p-1 rounded-lg shadow-sm flex items-center justify-center border border-[#001b3d]">
+              <div className="w-full h-full bg-white rounded-lg flex items-center justify-center font-black text-[#001b3d] text-xl italic">
                 RIO
               </div>
             </div>
             <div>
               <h2 className="text-xl font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="h-[1px] w-6 bg-white/30 print:bg-[#001b3d]/30"></span>
+                <span className="h-[1px] w-6 bg-[#001b3d]/30"></span>
                 <p className="text-[8px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
               </div>
             </div>
