@@ -84,7 +84,8 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
       // Impedir duplicatas na mesma data (exceto se for edição)
       if (!initialData?.id) {
         const existing = await pb.collection('testedopezinho_history').getList(1, 1, {
-          filter: `year = "${year}" && month = "${month}" && day = "${day}"`
+          filter: `year = "${year}" && month = "${month}" && day = "${day}"`,
+          requestKey: null
         });
 
         if (existing.items.length > 0) {
@@ -116,9 +117,9 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
       };
 
       if (initialData?.id) {
-        await pb.collection('testedopezinho_history').update(initialData.id, data);
+        await pb.collection('testedopezinho_history').update(initialData.id, data, { requestKey: null });
       } else {
-        await pb.collection('testedopezinho_history').create(data);
+        await pb.collection('testedopezinho_history').create(data, { requestKey: null });
       }
       onSave?.();
       onClose();

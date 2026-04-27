@@ -37,6 +37,7 @@ export function UnitShipping() {
 
       const records = await pb.collection('testedopezinho_shipping').getFullList({
         sort: '-created',
+        requestKey: null,
       });
       setHistory(records);
     } catch (err) {

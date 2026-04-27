@@ -29,6 +29,7 @@ export async function ensureAuth() {
       const authData = await pb.send('/api/admins/auth-with-password', {
         method: 'POST',
         body: { identity: email, password: password },
+        requestKey: null,
       });
       
       if (authData?.token && authData?.admin) {
@@ -42,13 +43,13 @@ export async function ensureAuth() {
       // Fallback para o comportamento padrão do SDK (Superusers ou Users)
       try {
         // Tenta Superusers (PB >= 0.23)
-        await pb.admins.authWithPassword(email, password);
+        await pb.admins.authWithPassword(email, password, { requestKey: null });
         console.log("Login como Superuser realizado com sucesso.");
         return true;
       } catch (superError: any) {
         try {
           // Tenta Coleção Users (Auth collection padrão)
-          await pb.collection('users').authWithPassword(email, password);
+          await pb.collection('users').authWithPassword(email, password, { requestKey: null });
           console.log("Login como Usuário realizado com sucesso.");
           return true;
         } catch (userError: any) {

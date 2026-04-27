@@ -96,7 +96,8 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
       // Impedir duplicatas na mesma data (exceto se for edição)
       if (!initialData?.id) {
         const existing = await pb.collection('testedopezinho_shipping').getList(1, 1, {
-          filter: `year = "${year}" && month = "${month}" && day = "${day}"`
+          filter: `year = "${year}" && month = "${month}" && day = "${day}"`,
+          requestKey: null
         });
 
         if (existing.items.length > 0) {
@@ -134,9 +135,9 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
       };
 
       if (initialData?.id) {
-        await pb.collection('testedopezinho_shipping').update(initialData.id, data);
+        await pb.collection('testedopezinho_shipping').update(initialData.id, data, { requestKey: null });
       } else {
-        await pb.collection('testedopezinho_shipping').create(data);
+        await pb.collection('testedopezinho_shipping').create(data, { requestKey: null });
       }
       onSave?.();
       onClose();

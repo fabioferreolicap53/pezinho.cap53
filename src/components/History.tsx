@@ -36,6 +36,7 @@ export function History() {
 
       const records = await pb.collection('testedopezinho_history').getFullList({
         sort: '-created',
+        requestKey: null,
       });
       setHistory(records);
     } catch (err) {

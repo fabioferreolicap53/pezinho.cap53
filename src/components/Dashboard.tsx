@@ -69,8 +69,8 @@ export function Dashboard() {
         }
 
         const [historyRecords, shippingRecords] = await Promise.all([
-          pb.collection('testedopezinho_history').getFullList({ sort: '-created' }),
-          pb.collection('testedopezinho_shipping').getFullList({ sort: '-created' })
+          pb.collection('testedopezinho_history').getFullList({ sort: '-created', requestKey: null }),
+          pb.collection('testedopezinho_shipping').getFullList({ sort: '-created', requestKey: null })
         ]);
 
         if (!isCancelled) {
