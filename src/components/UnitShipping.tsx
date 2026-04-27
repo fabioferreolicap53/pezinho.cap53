@@ -126,6 +126,20 @@ export function UnitShipping() {
                .replace("POLICLÍNICA", "POLI");
   };
 
+  const formatMoment = (record: any) => {
+    if (record.createdAt) return record.createdAt;
+    if (record.created) {
+      return new Date(record.created).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    return "Data não disponível";
+  };
+
   const filteredHistory = useMemo(() => {
     let filtered = history;
 
@@ -416,15 +430,14 @@ export function UnitShipping() {
                     </td>
                     <td className="px-xl py-lg align-middle whitespace-nowrap">
                       <div className="flex flex-col items-center gap-1.5">
-                        <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                          <Clock className="w-3 h-3 text-primary/50" />
-                          <span className="font-semibold uppercase tracking-tighter">Criação:</span>
-                          <span className="font-code-numeral">{item.createdAt}</span>
+                        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 shadow-sm">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formatMoment(item)}
                         </div>
                         {item.updatedAt && item.updatedAt !== item.createdAt && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant/60">
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
                             <Edit2 className="w-2.5 h-2.5" />
-                            <span className="uppercase tracking-tighter">Editado: {item.updatedAt}</span>
+                            Atualizado: {item.updatedAt}
                           </div>
                         )}
                       </div>

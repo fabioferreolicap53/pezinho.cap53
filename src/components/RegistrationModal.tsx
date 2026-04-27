@@ -81,6 +81,19 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
         return;
       }
 
+      // Impedir duplicatas na mesma data (exceto se for edição)
+      if (!initialData?.id) {
+        const existing = await pb.collection('testedopezinho_history').getList(1, 1, {
+          filter: `year = "${year}" && month = "${month}" && day = "${day}"`
+        });
+
+        if (existing.items.length > 0) {
+          alert(`Já existe um registro para a data ${day} de ${month} de ${year}.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const units = UNITS.map(name => ({
         name,
         count: Number(unitCounts[name]) || 0

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Calendar, TrendingUp, History, Calculator, BarChart3, PieChart as PieIcon, Activity, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Calendar, TrendingUp, History, Calculator, BarChart3, PieChart as PieIcon, Activity, Loader2, Building2, ChevronDown } from "lucide-react";
 import { RegistrationModal } from "./RegistrationModal";
 import { cn } from "../lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, LabelList } from 'recharts';
@@ -7,11 +7,55 @@ import { pb, ensureAuth } from "../lib/pocketbase";
 
 const COLORS = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af'];
 
+const UNITS = [
+  "TODAS AS UNIDADES",
+  "CF ALICE REGO",
+  "CF DEOLINDO COUTO",
+  "CF EDSON A. SAAD",
+  "CF ERNANI DE P. FERREIRA BRAGA",
+  "CF HELANDE DE MELO",
+  "CF ILZO MOTTA DE MELO",
+  "CF JAMIL HADDAD",
+  "CF JOÃO BATISTA CHAGAS",
+  "CF JOSÉ ANTÔNIO CIRAUDO",
+  "CF LENICE MARIA M. COELHO",
+  "CF LOURENÇO DE MELLO",
+  "CF SAMUEL PENHA VALLE",
+  "CF SÉRGIO AROUCA",
+  "CF VALÉRIA GOMES ESTEVES",
+  "CF WALDEMAR BERARDINELLI",
+  "CMS EMYDIO CABRAL",
+  "CMS ADELINO SIMÕES",
+  "CMS ALOYSIO AMÂNCIO DA SILVA",
+  "CMS CATTAPRETA",
+  "CMS CESÁRIO DE MELO",
+  "CMS DÉCIO AMARAL FILHO",
+  "CMS Dr. CYRO DE MELO",
+  "CMS ENFª FLORIPES G. PEREIRA",
+  "CMS MARIA APARECIDA ALMEIDA",
+  "CMS PROF. SÁVIO ANTUNES",
+  "HOSPITAL MUNICIPAL PEDRO II",
+  "POLICLÍNICA LINCOLN DE F. FILHO",
+];
+
+const MONTHS = [
+  "Todos os meses",
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+const YEARS = ["2026", "2025", "2024"];
+
 export function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [shippingData, setShippingData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filters State
+  const [selectedUnit, setSelectedUnit] = useState("TODAS AS UNIDADES");
+  const [selectedYear, setSelectedYear] = useState("2026");
+  const [selectedMonth, setSelectedMonth] = useState("Todos os meses");
 
   useEffect(() => {
     let isCancelled = false;
@@ -51,31 +95,114 @@ export function Dashboard() {
     };
   }, []);
 
+  // Filtered Data
+  const filteredHistory = useMemo(() => {
+    return historyData.filter(item => {
+      const yearMatch = item.year === selectedYear;
+      const monthMatch = selectedMonth === "Todos os meses" || item.month === selectedMonth;
+      return yearMatch && monthMatch;
+    });
+  }, [historyData, selectedYear, selectedMonth]);
+
+  const filteredShipping = useMemo(() => {
+    return shippingData.filter(item => {
+      const yearMatch = item.year === selectedYear;
+      const monthMatch = selectedMonth === "Todos os meses" || item.month === selectedMonth;
+      return yearMatch && monthMatch;
+    });
+  }, [shippingData, selectedYear, selectedMonth]);
+
   // Data for Exams by Unit (Top 5)
-  const examsByUnitData = historyData[0]?.units
-    ?.slice(0, 5)
-    ?.map((u: any) => ({ 
-      name: u.name.replace('CLÍNICA DA FAMÍLIA ', 'CF ').replace('CENTRO MUNICIPAL DE SAÚDE ', 'CMS '), 
-      testes: u.count 
-    })) || [];
+  const examsByUnitData = useMemo(() => {
+    if (selectedUnit !== "TODAS AS UNIDADES") {
+      // If a unit is selected, show only that unit's history over time or its total
+      const unitData = filteredHistory.reduce((acc, curr) => {
+        const unit = curr.units?.find((u: any) => u.name === selectedUnit);
+        return acc + (unit ? Number(unit.count) : 0);
+      }, 0);
+      return [{ 
+        name: selectedUnit.replace('CLÍNICA DA FAMÍLIA ', 'CF ').replace('CENTRO MUNICIPAL DE SAÚDE ', 'CMS '), 
+        testes: unitData 
+      }];
+    }
 
-  // Data for Exams Trend (Last entries)
-  const examsTrendData = [...historyData].reverse().map(h => ({
-    date: h.date.split('/')[0] + '/' + h.date.split('/')[1],
-    total: h.totalCount
-  }));
-
-  // Data for Supplies Distribution
-  const suppliesDistData = shippingData.reduce((acc, curr) => {
-    curr.shippings?.forEach((s: any) => {
-      Object.entries(s.items || {}).forEach(([item, count]) => {
-        const existing = acc.find((a: any) => a.name === item);
-        if (existing) existing.value += Number(count);
-        else acc.push({ name: item, value: Number(count) });
+    // Default: Top 5 units in the filtered period
+    const unitTotals: Record<string, number> = {};
+    filteredHistory.forEach(curr => {
+      curr.units?.forEach((u: any) => {
+        unitTotals[u.name] = (unitTotals[u.name] || 0) + Number(u.count);
       });
     });
-    return acc;
-  }, [] as { name: string, value: number }[]);
+
+    return Object.entries(unitTotals)
+      .map(([name, testes]) => ({ 
+        name: name.replace('CLÍNICA DA FAMÍLIA ', 'CF ').replace('CENTRO MUNICIPAL DE SAÚDE ', 'CMS '), 
+        testes 
+      }))
+      .sort((a, b) => b.testes - a.testes)
+      .slice(0, 5);
+  }, [filteredHistory, selectedUnit]);
+
+  // Data for Exams Trend (Last entries)
+  const examsTrendData = useMemo(() => {
+    const trend = [...filteredHistory].reverse().map(h => {
+      let total = h.totalCount;
+      if (selectedUnit !== "TODAS AS UNIDADES") {
+        const unit = h.units?.find((u: any) => u.name === selectedUnit);
+        total = unit ? Number(unit.count) : 0;
+      }
+      return {
+        date: h.date.split('/')[0] + '/' + h.date.split('/')[1],
+        total
+      };
+    });
+    return trend;
+  }, [filteredHistory, selectedUnit]);
+
+  // Data for Supplies Distribution
+  const suppliesDistData = useMemo(() => {
+    return filteredShipping.reduce((acc, curr) => {
+      curr.shippings?.forEach((s: any) => {
+        if (selectedUnit !== "TODAS AS UNIDADES" && s.unit !== selectedUnit) return;
+        
+        Object.entries(s.items || {}).forEach(([item, count]) => {
+          const existing = acc.find((a: any) => a.name === item);
+          if (existing) existing.value += Number(count);
+          else acc.push({ name: item, value: Number(count) });
+        });
+      });
+      return acc;
+    }, [] as { name: string, value: number }[]);
+  }, [filteredShipping, selectedUnit]);
+
+  // Statistics
+  const totalExams = useMemo(() => {
+    return filteredHistory.reduce((acc, curr) => {
+      if (selectedUnit !== "TODAS AS UNIDADES") {
+        const unit = curr.units?.find((u: any) => u.name === selectedUnit);
+        return acc + (unit ? Number(unit.count) : 0);
+      }
+      return acc + (Number(curr.totalCount) || 0);
+    }, 0);
+  }, [filteredHistory, selectedUnit]);
+
+  const totalSupplies = useMemo(() => {
+    return filteredShipping.reduce((acc, curr) => {
+      let count = 0;
+      curr.shippings?.forEach((s: any) => {
+        if (selectedUnit !== "TODAS AS UNIDADES" && s.unit !== selectedUnit) return;
+        count += Object.values(s.items || {}).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
+      });
+      return acc + count;
+    }, 0);
+  }, [filteredShipping, selectedUnit]);
+
+  const unitsAtendidas = useMemo(() => {
+    if (selectedUnit !== "TODAS AS UNIDADES") return 1;
+    const units = new Set();
+    filteredHistory.forEach(h => h.units?.forEach((u: any) => units.add(u.name)));
+    return units.size || 27;
+  }, [filteredHistory, selectedUnit]);
 
   if (isLoading) {
     return (
@@ -97,12 +224,72 @@ export function Dashboard() {
         </div>
       </div>
 
+      {/* Filters Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm mb-8">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-primary" />
+            <h4 className="text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em]">UNIDADE</h4>
+          </div>
+          <div className="relative group">
+            <select 
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              className="w-full px-4 py-2.5 bg-surface-bright border border-outline-variant/50 rounded-xl text-sm font-bold text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all appearance-none cursor-pointer"
+            >
+              {UNITS.map(unit => (
+                <option key={unit} value={unit} className="bg-surface-container-lowest text-on-surface">{unit}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none group-hover:text-primary transition-colors" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
+            <h4 className="text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em]">ANO</h4>
+          </div>
+          <div className="relative group">
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full px-4 py-2.5 bg-surface-bright border border-outline-variant/50 rounded-xl text-sm font-bold text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all appearance-none cursor-pointer"
+            >
+              {YEARS.map(year => (
+                <option key={year} value={year} className="bg-surface-container-lowest text-on-surface">{year}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none group-hover:text-primary transition-colors" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
+            <h4 className="text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em]">MÊS</h4>
+          </div>
+          <div className="relative group">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full px-4 py-2.5 bg-surface-bright border border-outline-variant/50 rounded-xl text-sm font-bold text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary focus:outline-none transition-all appearance-none cursor-pointer"
+            >
+              {MONTHS.map(month => (
+                <option key={month} value={month} className="bg-surface-container-lowest text-on-surface">{month}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none group-hover:text-primary transition-colors" />
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-lg mb-8">
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col justify-between shadow-sm">
           <div className="flex justify-between items-start mb-md">
             <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-              Total Exames (Abril)
+              Total Exames ({selectedMonth === "Todos os meses" ? selectedYear : selectedMonth})
             </span>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <Activity className="w-[18px] h-[18px] text-primary" />
@@ -110,11 +297,11 @@ export function Dashboard() {
           </div>
           <div>
             <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">
-              {historyData.reduce((acc, curr) => acc + (Number(curr.totalCount) || 0), 0)}
+              {totalExams}
             </div>
             <div className="flex items-center gap-1 text-green-600 mt-1">
               <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+12.5% vs mês anterior</span>
+              <span className="text-sm font-bold">Total no período</span>
             </div>
           </div>
         </div>
@@ -130,7 +317,7 @@ export function Dashboard() {
           </div>
           <div>
             <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">
-              {shippingData.reduce((acc, curr) => acc + (Number(curr.totalItems) || 0), 0)}
+              {totalSupplies}
             </div>
             <div className="text-sm text-on-surface-variant mt-1 font-medium">Consolidado do período</div>
           </div>
@@ -146,8 +333,10 @@ export function Dashboard() {
             </div>
           </div>
           <div>
-            <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">27</div>
-            <div className="text-sm text-on-surface-variant mt-1 font-medium">100% da rede CAP 5.3</div>
+            <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">{unitsAtendidas}</div>
+            <div className="text-sm text-on-surface-variant mt-1 font-medium">
+              {selectedUnit === "TODAS AS UNIDADES" ? "Rede CAP 5.3" : "Unidade selecionada"}
+            </div>
           </div>
         </div>
       </div>
@@ -173,8 +362,8 @@ export function Dashboard() {
                   itemStyle={{ color: '#001b3d', fontWeight: 'bold' }}
                   labelStyle={{ color: '#001b3d', fontWeight: 'black', marginBottom: '4px' }}
                 />
-                <Line type="monotone" dataKey="total" stroke="#ffffff" strokeWidth={3} dot={{ r: 6, fill: '#ffffff', strokeWidth: 2, stroke: '#001b3d' }} activeDot={{ r: 8 }}>
-                  <LabelList dataKey="total" position="top" fill="#ffffff" fontSize={11} fontWeight="900" offset={10} />
+                <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }} activeDot={{ r: 8 }}>
+                  <LabelList dataKey="total" position="top" fill="#1e40af" fontSize={11} fontWeight="900" offset={10} />
                 </Line>
               </LineChart>
             </ResponsiveContainer>
@@ -201,8 +390,8 @@ export function Dashboard() {
                   itemStyle={{ color: '#001b3d', fontWeight: 'bold' }}
                   labelStyle={{ color: '#001b3d', fontWeight: 'black', marginBottom: '4px' }}
                 />
-                <Bar dataKey="testes" fill="#ffffff" radius={[0, 4, 4, 0]} barSize={20}>
-                  <LabelList dataKey="testes" position="right" fill="#ffffff" fontSize={11} fontWeight="900" offset={10} />
+                <Bar dataKey="testes" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                  <LabelList dataKey="testes" position="right" fill="#1e40af" fontSize={11} fontWeight="900" offset={10} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -246,11 +435,11 @@ export function Dashboard() {
             
             <div className="w-full lg:w-auto flex flex-col gap-3 min-w-[240px]">
               {suppliesDistData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center gap-4 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-2xl border border-white/10 transition-all group">
-                  <div className="w-4 h-4 rounded-full shadow-lg shadow-black/20 group-hover:scale-110 transition-transform" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                  <span className="text-[12px] font-black text-white/90 uppercase tracking-widest flex-1">{entry.name}</span>
-                  <div className="bg-white/10 px-3 py-1 rounded-lg border border-white/10 min-w-[40px] text-center">
-                    <span className="text-[12px] font-black text-white">{entry.value}</span>
+                <div key={entry.name} className="flex items-center gap-4 bg-surface-bright hover:bg-surface-container-high px-5 py-3 rounded-2xl border border-outline-variant/30 transition-all group shadow-sm">
+                  <div className="w-4 h-4 rounded-full shadow-lg shadow-black/5 group-hover:scale-110 transition-transform" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                  <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-widest flex-1">{entry.name}</span>
+                  <div className="bg-primary/10 px-3 py-1 rounded-lg border border-primary/20 min-w-[40px] text-center">
+                    <span className="text-[12px] font-black text-primary">{entry.value}</span>
                   </div>
                 </div>
               ))}

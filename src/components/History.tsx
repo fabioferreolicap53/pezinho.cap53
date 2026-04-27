@@ -125,6 +125,20 @@ export function History() {
                .replace("POLICLÍNICA", "POLI");
   };
 
+  const formatMoment = (record: any) => {
+    if (record.createdAt) return record.createdAt;
+    if (record.created) {
+      return new Date(record.created).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    return "Data não disponível";
+  };
+
   const filteredHistory = useMemo(() => {
     let filtered = history;
 
@@ -371,16 +385,24 @@ export function History() {
                       </div>
                     </td>
                     <td className="px-xl py-lg align-middle">
-                      <div className="flex flex-wrap justify-center gap-2 max-w-[400px] mx-auto">
-                        {(item.units || []).slice(0, 3).map((unit: any, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-surface-container-high rounded-full text-[11px] font-bold text-on-surface-variant border border-outline-variant/30">
-                            {abbreviate(unit.name)}: {unit.count}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-center items-center gap-2">
+                          <span className="bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                            {(item.units || []).length} Unidades
                           </span>
-                        ))}
-                        {(item.units || []).length > 3 && (
-                          <span className="px-3 py-1 bg-primary/5 rounded-full text-[11px] font-bold text-primary border border-primary/20">
-                            +{(item.units || []).length - 3} unidades
-                          </span>
+                        </div>
+                        
+                        {(item.units || []).length > 0 && (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="font-bold text-on-surface text-[12px] border border-outline-variant/30 px-2 py-1 rounded-lg bg-surface-bright">
+                              {abbreviate(item.units[0].name)}
+                            </span>
+                            {(item.units || []).length > 1 && (
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20">
+                                <span className="text-primary font-black text-xs">+{(item.units || []).length - 1}</span>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -390,15 +412,15 @@ export function History() {
                       </div>
                     </td>
                     <td className="px-xl py-lg align-middle text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100">
-                          <Clock className="w-3 h-3" />
-                          Criado: {item.createdAt}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 shadow-sm">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formatMoment(item)}
                         </div>
                         {item.updatedAt !== item.createdAt && (
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant/60">
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
                             <Edit2 className="w-2.5 h-2.5" />
-                            Editado: {item.updatedAt}
+                            Atualizado: {item.updatedAt}
                           </div>
                         )}
                       </div>

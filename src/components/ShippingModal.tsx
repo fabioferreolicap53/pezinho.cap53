@@ -93,6 +93,19 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
         return;
       }
 
+      // Impedir duplicatas na mesma data (exceto se for edição)
+      if (!initialData?.id) {
+        const existing = await pb.collection('testedopezinho_shipping').getList(1, 1, {
+          filter: `year = "${year}" && month = "${month}" && day = "${day}"`
+        });
+
+        if (existing.items.length > 0) {
+          alert(`Já existe um registro de insumos para a data ${day} de ${month} de ${year}.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const shippingList = UNITS.map(unit => {
         const items: Record<string, number> = {};
         let hasItems = false;
