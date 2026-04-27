@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;600;700;800&family=Public+Sans:wght@600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-surface-bright: #001b3d;
+  --color-surface-container-lowest: #002b5c;
+  --color-surface-container-high: #003a7a;
+  --color-surface-variant: #004a99;
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #e1e3e4;
+  --color-outline: #c2c6d4;
+  --color-outline-variant: #004a99;
+  --color-primary: #ffffff;
+  --color-on-primary: #001b3d;
+  --color-primary-container: #005eb8;
+  --color-primary-fixed: #ffffff;
+  --color-on-primary-fixed: #001b3d;
+  --color-on-primary-fixed-variant: #e1e3e4;
+  --color-secondary-fixed: #003a7a;
+  --color-on-secondary-fixed: #ffffff;
+  --color-secondary-container: #002b5c;
+  --color-on-secondary-container: #ffffff;
+  --color-tertiary: #d6e3ff;
+
+  --font-h1: "Manrope", sans-serif;
+  --font-h2: "Manrope", sans-serif;
+  --font-h3: "Manrope", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-label-caps: "Public Sans", sans-serif;
+  --font-table-data: "Inter", sans-serif;
+  --font-code-numeral: "Inter", sans-serif;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+@layer utilities {
+  .text-h1 {
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  .text-h2 {
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  .text-h3 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+  }
+  .text-body-lg {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .text-body-md {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .text-label-caps {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .text-table-data {
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .text-code-numeral {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
