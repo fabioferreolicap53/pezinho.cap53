@@ -244,11 +244,11 @@ export function PrintShipping() {
               <tbody className="text-[11px]">
                 {shippingData.shippings.map((ship, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-[#001b3d]/[0.02]"}>
-                    <td className="py-0.5 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tight leading-none h-5">
+                    <td className="py-0.5 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tight leading-none h-6">
                       {ship.unit}
                     </td>
                     {ITEMS.map(item => (
-                      <td key={item} className="py-0.5 px-2 font-black text-center border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 text-[12px] h-5">
+                      <td key={item} className="py-0.5 px-2 font-black text-center border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 text-[12px] h-6">
                         {ship.items[item] || 0}
                       </td>
                     ))}

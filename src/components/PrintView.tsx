@@ -268,10 +268,10 @@ export function PrintView() {
               <tbody className="text-[12px]">
                 {UNITS.map((unit, idx) => (
                   <tr key={unit} className={idx % 2 === 0 ? "bg-white" : "bg-[#001b3d]/[0.01]"}>
-                    <td className="py-0 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tighter leading-none h-5">
+                    <td className="py-0 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tighter leading-none h-6">
                       {unit}
                     </td>
-                    <td className="py-0 px-4 font-black text-center border-b border-b-[#001b3d]/5 text-[12px] h-5">
+                    <td className="py-0 px-4 font-black text-center border-b border-b-[#001b3d]/5 text-[12px] h-6">
                       {filteredData[unit] || "—"}
                     </td>
                   </tr>
