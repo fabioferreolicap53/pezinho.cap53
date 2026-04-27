@@ -1,5 +1,7 @@
-import { X } from "lucide-react";
+import { X, Save, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useState, useEffect } from "react";
+import { pb } from "../lib/pocketbase";
 
 const UNITS = [
   "CF ALICE REGO",
@@ -35,15 +37,78 @@ interface RegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   isViewOnly?: boolean;
+  initialData?: any;
+  onSave?: () => void;
 }
 
-export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: RegistrationModalProps) {
+export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initialData, onSave }: RegistrationModalProps) {
+  const [year, setYear] = useState("2026");
+  const [month, setMonth] = useState("Abril");
+  const [day, setDay] = useState("");
+  const [unitCounts, setUnitCounts] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setYear(initialData.year || "2026");
+      setMonth(initialData.month || "Abril");
+      setDay(initialData.day || "");
+      const counts: Record<string, string> = {};
+      (initialData.units || []).forEach((u: any) => {
+        counts[u.name] = String(u.count || "");
+      });
+      setUnitCounts(counts);
+    } else {
+      const now = new Date();
+      setYear("2026");
+      setMonth("Abril");
+      setDay(String(now.getDate()).padStart(2, '0'));
+      setUnitCounts({});
+    }
+  }, [initialData, isOpen]);
+
   if (!isOpen) return null;
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.toLocaleString('pt-BR', { month: 'long' });
-  const currentDay = String(now.getDate()).padStart(2, '0');
+  const totalCount = Object.values(unitCounts).reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const units = UNITS.map(name => ({
+        name,
+        count: Number(unitCounts[name]) || 0
+      })).filter(u => u.count > 0);
+
+      const date = `${day}/${month.padStart(2, '0')}/${year}`; // This format might need adjustment based on how month is stored
+      // Actually, SHARED_HISTORY uses "24/04/2026". We should probably format it correctly.
+      const monthIndex = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].indexOf(month) + 1;
+      const formattedDate = `${day}/${String(monthIndex).padStart(2, '0')}/${year}`;
+
+      const data = {
+        date: formattedDate,
+        day,
+        month,
+        year,
+        totalCount,
+        units,
+        createdAt: initialData?.createdAt || new Date().toLocaleString('pt-BR'),
+        updatedAt: new Date().toLocaleString('pt-BR')
+      };
+
+      if (initialData?.id) {
+        await pb.collection('testedopezinho_history').update(initialData.id, data);
+      } else {
+        await pb.collection('testedopezinho_history').create(data);
+      }
+      onSave?.();
+      onClose();
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar os dados.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-[#001b3d]/80 z-50 flex items-center justify-center p-0 md:p-8 backdrop-blur-sm transition-all duration-300">
@@ -82,10 +147,10 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
                 <select 
                   required
                   disabled={isViewOnly}
-                  defaultValue={currentYear}
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
                   className="border border-outline-variant/50 rounded-lg px-4 py-2.5 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-surface-container-lowest w-full text-on-surface transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <option value="" disabled>Selecione o ano</option>
                   <option value="2026">2026</option>
                   <option value="2025">2025</option>
                   <option value="2024">2024</option>
@@ -98,15 +163,15 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
                 <select 
                   required
                   disabled={isViewOnly}
-                  defaultValue={currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)}
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
                   className="border border-outline-variant/50 rounded-lg px-4 py-2.5 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-surface-container-lowest w-full text-on-surface transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <option value="" disabled>Selecione o mês</option>
                   {[
                     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
                     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-                  ].map(month => (
-                    <option key={month} value={month}>{month}</option>
+                  ].map(m => (
+                    <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
               </div>
@@ -117,10 +182,10 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
                 <select 
                   required 
                   disabled={isViewOnly}
-                  defaultValue={currentDay}
+                  value={day}
+                  onChange={(e) => setDay(e.target.value)}
                   className="border border-outline-variant/50 rounded-lg px-4 py-2.5 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-surface-container-lowest w-full text-on-surface transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <option value="" disabled>Selecione o dia</option>
                   {Array.from({ length: 31 }, (_, i) => {
                     const d = String(i + 1).padStart(2, '0');
                     return <option key={d} value={d}>{d}</option>;
@@ -137,16 +202,16 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
                 <span className="w-1 h-4 bg-primary rounded-full"></span>
                 Unidades de Saúde ({UNITS.length})
               </h4>
-              <span className="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">
-                Quantidade
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">Total Parcial</span>
+                <span className="font-code-numeral text-xl font-bold text-primary">{totalCount}</span>
+              </div>
             </div>
-            {/* 2 Column Grid for High Density */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-xl gap-y-2">
               {UNITS.map((unit) => (
                 <div
                   key={unit}
-                  className="grid grid-cols-[minmax(150px,2fr)_auto_minmax(0,1fr)] items-center py-2.5 border-b border-outline-variant/10 hover:bg-surface-bright/80 px-3 rounded-lg transition-all group"
+                  className="grid grid-cols-[minmax(150px,2fr)_auto] items-center py-2.5 border-b border-outline-variant/10 hover:bg-surface-bright/80 px-3 rounded-lg transition-all group"
                 >
                   <span className="font-table-data text-table-data text-on-surface/90 group-hover:text-on-surface transition-colors pr-4 break-words">
                     {unit}
@@ -154,13 +219,14 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
                   <div className="flex justify-center">
                     <input
                       disabled={isViewOnly}
+                      value={unitCounts[unit] || ""}
+                      onChange={(e) => setUnitCounts({ ...unitCounts, [unit]: e.target.value })}
                       className="w-24 border border-outline-variant/50 rounded-lg px-3 py-1.5 font-code-numeral text-center focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-surface-container-lowest text-on-surface transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                       min="0"
                       placeholder="0"
                       type="number"
                     />
                   </div>
-                  <div /> {/* Spacer for symmetry */}
                 </div>
               ))}
             </div>
@@ -177,10 +243,12 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false }: Regis
           </button>
           {!isViewOnly && (
             <button
-              onClick={onClose}
-              className="px-xl py-2.5 bg-primary text-on-primary rounded-xl font-label-caps text-[11px] uppercase tracking-wider hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-xl py-2.5 bg-primary text-on-primary rounded-xl font-label-caps text-[11px] uppercase tracking-wider hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
             >
-              Salvar Registro
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {initialData ? "Atualizar Registro" : "Salvar Registro"}
             </button>
           )}
         </div>

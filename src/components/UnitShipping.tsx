@@ -1,19 +1,21 @@
-import { Truck, Search, Calendar, Edit2, Trash2, Clock, Plus, Lock, Printer, Eye, EyeOff, CheckCircle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Truck, Search, Calendar, Edit2, Trash2, Clock, Plus, Lock, Printer, Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import { ShippingModal } from "./ShippingModal";
 import { cn } from "../lib/utils";
 import { Link, useNavigate } from "react-router-dom";
-import { SHARED_SHIPPING_HISTORY } from "../data/history";
+import { pb } from "../lib/pocketbase";
 
 export function UnitShipping() {
   const navigate = useNavigate();
-  const [history, setHistory] = useState(SHARED_SHIPPING_HISTORY);
+  const [history, setHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewOnly, setIsViewOnly] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [password, setPassword] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingAction, setPendingAction] = useState<'delete' | 'add' | 'edit' | null>(null);
@@ -24,7 +26,30 @@ export function UnitShipping() {
 
   const [error, setError] = useState("");
 
-  const handleDeleteClick = (id: number) => {
+  const fetchHistory = async () => {
+    try {
+      if (!pb.authStore.isValid) {
+        await pb.collection('users').authWithPassword(
+          import.meta.env.VITE_PB_LOGIN,
+          import.meta.env.VITE_PB_PASSWORD
+        );
+      }
+      const records = await pb.collection('testedopezinho_shipping').getFullList({
+        sort: '-created',
+      });
+      setHistory(records);
+    } catch (err) {
+      console.error("Erro ao buscar histórico de envios:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleDeleteClick = (id: string) => {
     setSelectedId(id);
     setPendingAction('delete');
     setConfirmStep(1);
@@ -34,40 +59,48 @@ export function UnitShipping() {
     setError("");
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (pendingAction === 'delete' && confirmStep === 1) {
       setConfirmStep(2);
       return;
     }
 
     if (password === "daps2022") {
-      if (pendingAction === 'delete') {
-        setHistory(prev => prev.filter(item => item.id !== selectedId));
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else if (pendingAction === 'add') {
-        setIsViewOnly(false);
-        setIsModalOpen(true);
-      } else if (pendingAction === 'edit') {
-        setIsViewOnly(false);
-        setIsModalOpen(true);
+      try {
+        if (pendingAction === 'delete' && selectedId) {
+          await pb.collection('testedopezinho_shipping').delete(selectedId);
+          setHistory(prev => prev.filter(item => item.id !== selectedId));
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+        } else if (pendingAction === 'add') {
+          setSelectedRecord(null);
+          setIsViewOnly(false);
+          setIsModalOpen(true);
+        } else if (pendingAction === 'edit') {
+          setIsViewOnly(false);
+          setIsModalOpen(true);
+        }
+        setIsPasswordModalOpen(false);
+        setPendingAction(null);
+        setPassword("");
+        setConfirmStep(1);
+      } catch (err) {
+        setError("Erro ao processar operação no servidor.");
       }
-      setIsPasswordModalOpen(false);
-      setPendingAction(null);
-      setPassword("");
-      setConfirmStep(1);
     } else {
       setError("Senha incorreta!");
     }
   };
 
-  const handleView = () => {
+  const handleView = (record: any) => {
+    setSelectedRecord(record);
     setIsViewOnly(true);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (id: number) => {
-    setSelectedId(id);
+  const handleEdit = (record: any) => {
+    setSelectedRecord(record);
+    setSelectedId(record.id);
     setPendingAction('edit');
     setConfirmStep(2);
     setIsPasswordModalOpen(true);
@@ -112,7 +145,13 @@ export function UnitShipping() {
 
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-xl bg-surface-bright relative z-10 w-full min-h-screen">
-      <ShippingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isViewOnly={isViewOnly} />
+      <ShippingModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        isViewOnly={isViewOnly}
+        initialData={selectedRecord}
+        onSave={fetchHistory}
+      />
       
       {/* Password Modal */}
       {isPasswordModalOpen && (
@@ -306,101 +345,124 @@ export function UnitShipping() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/10">
-              {filteredHistory.map((item) => (
-                <tr key={item.id} className="hover:bg-surface-bright/50 transition-colors group text-center">
-                  <td className="px-xl py-lg align-middle">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-2 text-on-surface font-bold">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        {item.date}
-                      </div>
-                      <span className="text-[12px] text-on-surface-variant">
-                        {item.day} de {item.month}, {item.year}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg align-middle">
-                    <div className="flex flex-col items-center gap-2 max-w-md mx-auto">
-                      <div className="flex justify-center items-center gap-2">
-                        <span className="bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                          {item.shippings.length} Unidades
-                        </span>
-                      </div>
-                      
-                      {item.shippings.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-on-surface text-[12px] border border-outline-variant/30 px-2 py-1 rounded-lg bg-surface-bright">
-                            {abbreviate(item.shippings[0].unit)}
-                          </span>
-                          {item.shippings.length > 1 && (
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20">
-                              <span className="text-primary font-black text-xs">+{item.shippings.length - 1}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
-                    {item.shippings.reduce((acc, curr) => acc + (curr.items["Filtro Vermelho"] || 0), 0)}
-                  </td>
-                  <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
-                    {item.shippings.reduce((acc, curr) => acc + (curr.items["Filtro Azul"] || 0), 0)}
-                  </td>
-                  <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
-                    {item.shippings.reduce((acc, curr) => acc + (curr.items["Lanceta"] || 0), 0)}
-                  </td>
-                  <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
-                    {item.shippings.reduce((acc, curr) => acc + (curr.items["Envelope"] || 0), 0)}
-                  </td>
-                  <td className="px-xl py-lg align-middle">
-                    <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-primary/10 text-primary font-code-numeral font-bold border border-primary/20">
-                      {item.totalItems}
-                    </span>
-                  </td>
-                  <td className="px-xl py-lg align-middle whitespace-nowrap">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                        <Clock className="w-3 h-3 text-primary/50" />
-                        <span className="font-semibold uppercase tracking-tighter">Criação:</span>
-                        <span className="font-code-numeral">{item.createdAt}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg align-middle whitespace-nowrap">
-                    <div className="flex justify-center gap-1">
-                      <button 
-                        onClick={handleView}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Visualizar"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => navigate('/impressao-envio', { state: { shipping: item } })}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Imprimir"
-                      >
-                        <Printer className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(item.id)}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClick(item.id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg transition-all text-on-surface-variant hover:text-red-500"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-xl py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                      <p className="text-on-surface-variant font-bold animate-pulse">CARREGANDO HISTÓRICO...</p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : filteredHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-xl py-20 text-center text-on-surface-variant font-medium">
+                    Nenhum registro encontrado para este período.
+                  </td>
+                </tr>
+              ) : (
+                filteredHistory.map((item) => (
+                  <tr key={item.id} className="hover:bg-surface-bright/50 transition-colors group text-center">
+                    <td className="px-xl py-lg align-middle">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-2 text-on-surface font-bold">
+                          <Calendar className="w-4 h-4 text-primary" />
+                          {item.date}
+                        </div>
+                        <span className="text-[12px] text-on-surface-variant">
+                          {item.day} de {item.month}, {item.year}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle">
+                      <div className="flex flex-col items-center gap-2 max-w-md mx-auto">
+                        <div className="flex justify-center items-center gap-2">
+                          <span className="bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                            {(item.shippings || []).length} Unidades
+                          </span>
+                        </div>
+                        
+                        {(item.shippings || []).length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-on-surface text-[12px] border border-outline-variant/30 px-2 py-1 rounded-lg bg-surface-bright">
+                              {abbreviate(item.shippings[0].unit)}
+                            </span>
+                            {(item.shippings || []).length > 1 && (
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20">
+                                <span className="text-primary font-black text-xs">+{(item.shippings || []).length - 1}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
+                      {(item.shippings || []).reduce((acc: number, curr: any) => acc + (curr.items["Filtro Vermelho"] || 0), 0)}
+                    </td>
+                    <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
+                      {(item.shippings || []).reduce((acc: number, curr: any) => acc + (curr.items["Filtro Azul"] || 0), 0)}
+                    </td>
+                    <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
+                      {(item.shippings || []).reduce((acc: number, curr: any) => acc + (curr.items["Lanceta"] || 0), 0)}
+                    </td>
+                    <td className="px-xl py-lg align-middle font-code-numeral font-bold text-primary">
+                      {(item.shippings || []).reduce((acc: number, curr: any) => acc + (curr.items["Envelope"] || 0), 0)}
+                    </td>
+                    <td className="px-xl py-lg align-middle">
+                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-primary/10 text-primary font-code-numeral font-bold border border-primary/20">
+                        {item.totalItems}
+                      </span>
+                    </td>
+                    <td className="px-xl py-lg align-middle whitespace-nowrap">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+                          <Clock className="w-3 h-3 text-primary/50" />
+                          <span className="font-semibold uppercase tracking-tighter">Criação:</span>
+                          <span className="font-code-numeral">{item.createdAt}</span>
+                        </div>
+                        {item.updatedAt && item.updatedAt !== item.createdAt && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant/60">
+                            <Edit2 className="w-2.5 h-2.5" />
+                            <span className="uppercase tracking-tighter">Editado: {item.updatedAt}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle whitespace-nowrap">
+                      <div className="flex justify-center gap-1">
+                        <button 
+                          onClick={() => handleView(item)}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
+                          title="Visualizar"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => navigate('/impressao-envio', { state: { shipping: item } })}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
+                          title="Imprimir"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(item)}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(item.id)}
+                          className="p-2 hover:bg-red-500/10 rounded-lg transition-all text-on-surface-variant hover:text-red-500"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

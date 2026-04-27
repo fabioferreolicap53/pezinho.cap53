@@ -1,37 +1,91 @@
-import { useState } from "react";
-import { Plus, Calendar, TrendingUp, History, Calculator, BarChart3, PieChart as PieIcon, Activity } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Calendar, TrendingUp, History, Calculator, BarChart3, PieChart as PieIcon, Activity, Loader2 } from "lucide-react";
 import { RegistrationModal } from "./RegistrationModal";
 import { cn } from "../lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, LabelList } from 'recharts';
-import { SHARED_HISTORY, SHARED_SHIPPING_HISTORY } from "../data/history";
+import { pb } from "../lib/pocketbase";
 
 const COLORS = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af'];
 
 export function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [shippingData, setShippingData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function fetchData() {
+      try {
+        // Auth if not logged in
+        if (!pb.authStore.isValid) {
+          await pb.collection('users').authWithPassword(
+            import.meta.env.VITE_PB_LOGIN,
+            import.meta.env.VITE_PB_PASSWORD
+          );
+        }
+
+        const [historyRecords, shippingRecords] = await Promise.all([
+          pb.collection('testedopezinho_history').getFullList({ sort: '-created' }),
+          pb.collection('testedopezinho_shipping').getFullList({ sort: '-created' })
+        ]);
+
+        if (!isCancelled) {
+          setHistoryData(historyRecords);
+          setShippingData(shippingRecords);
+        }
+      } catch (error: any) {
+        if (!error.isAbort && !isCancelled) {
+          console.error("Erro ao buscar dados:", error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Data for Exams by Unit (Top 5)
-  const examsByUnitData = SHARED_HISTORY[0]?.units
-    .slice(0, 5)
-    .map(u => ({ name: u.name.replace('CLÍNICA DA FAMÍLIA ', 'CF ').replace('CENTRO MUNICIPAL DE SAÚDE ', 'CMS '), testes: u.count })) || [];
+  const examsByUnitData = historyData[0]?.units
+    ?.slice(0, 5)
+    ?.map((u: any) => ({ 
+      name: u.name.replace('CLÍNICA DA FAMÍLIA ', 'CF ').replace('CENTRO MUNICIPAL DE SAÚDE ', 'CMS '), 
+      testes: u.count 
+    })) || [];
 
   // Data for Exams Trend (Last entries)
-  const examsTrendData = [...SHARED_HISTORY].reverse().map(h => ({
+  const examsTrendData = [...historyData].reverse().map(h => ({
     date: h.date.split('/')[0] + '/' + h.date.split('/')[1],
     total: h.totalCount
   }));
 
   // Data for Supplies Distribution
-  const suppliesDistData = SHARED_SHIPPING_HISTORY.reduce((acc, curr) => {
-    curr.shippings.forEach(s => {
-      Object.entries(s.items).forEach(([item, count]) => {
-        const existing = acc.find(a => a.name === item);
-        if (existing) existing.value += count;
-        else acc.push({ name: item, value: count });
+  const suppliesDistData = shippingData.reduce((acc, curr) => {
+    curr.shippings?.forEach((s: any) => {
+      Object.entries(s.items || {}).forEach(([item, count]) => {
+        const existing = acc.find((a: any) => a.name === item);
+        if (existing) existing.value += Number(count);
+        else acc.push({ name: item, value: Number(count) });
       });
     });
     return acc;
   }, [] as { name: string, value: number }[]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-surface-bright min-h-screen">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-xl bg-surface-bright relative z-10 w-full min-h-screen pb-24">
@@ -58,7 +112,7 @@ export function Dashboard() {
           </div>
           <div>
             <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">
-              {SHARED_HISTORY.reduce((acc, curr) => acc + curr.totalCount, 0)}
+              {historyData.reduce((acc, curr) => acc + (Number(curr.totalCount) || 0), 0)}
             </div>
             <div className="flex items-center gap-1 text-green-600 mt-1">
               <TrendingUp className="w-4 h-4" />
@@ -78,7 +132,7 @@ export function Dashboard() {
           </div>
           <div>
             <div className="font-h1 text-[40px] leading-tight text-on-surface font-bold font-code-numeral">
-              {SHARED_SHIPPING_HISTORY.reduce((acc, curr) => acc + curr.totalItems, 0)}
+              {shippingData.reduce((acc, curr) => acc + (Number(curr.totalItems) || 0), 0)}
             </div>
             <div className="text-sm text-on-surface-variant mt-1 font-medium">Consolidado do período</div>
           </div>

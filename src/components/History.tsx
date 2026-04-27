@@ -1,21 +1,21 @@
 import { History as HistoryIcon, Search, Calendar, MapPin, Edit2, Trash2, Clock, X, Lock, Printer, Eye, EyeOff, Plus, CheckCircle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { RegistrationModal } from "./RegistrationModal";
 import { cn } from "../lib/utils";
-import { SHARED_HISTORY } from "../data/history";
-import { Link } from "react-router-dom";
-
-import { useNavigate } from "react-router-dom";
+import { pb } from "../lib/pocketbase";
+import { Link, useNavigate } from "react-router-dom";
 
 export function History() {
   const navigate = useNavigate();
-  const [history, setHistory] = useState(SHARED_HISTORY);
+  const [history, setHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewOnly, setIsViewOnly] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [password, setPassword] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingAction, setPendingAction] = useState<'delete' | 'add' | 'edit' | null>(null);
@@ -23,10 +23,32 @@ export function History() {
   const [selectedYear, setSelectedYear] = useState("2026");
   const [selectedMonth, setSelectedMonth] = useState("Abril");
   const [selectedDay, setSelectedDay] = useState("");
-
   const [error, setError] = useState("");
 
-  const handleDeleteClick = (id: number) => {
+  const fetchHistory = async () => {
+    try {
+      if (!pb.authStore.isValid) {
+        await pb.collection('users').authWithPassword(
+          import.meta.env.VITE_PB_LOGIN,
+          import.meta.env.VITE_PB_PASSWORD
+        );
+      }
+      const records = await pb.collection('testedopezinho_history').getFullList({
+        sort: '-created',
+      });
+      setHistory(records);
+    } catch (err) {
+      console.error("Erro ao buscar histórico:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleDeleteClick = (id: string) => {
     setSelectedId(id);
     setPendingAction('delete');
     setConfirmStep(1);
@@ -36,40 +58,48 @@ export function History() {
     setError("");
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (pendingAction === 'delete' && confirmStep === 1) {
       setConfirmStep(2);
       return;
     }
 
     if (password === "daps2022") {
-      if (pendingAction === 'delete') {
-        setHistory(prev => prev.filter(item => item.id !== selectedId));
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else if (pendingAction === 'add') {
-        setIsViewOnly(false);
-        setIsModalOpen(true);
-      } else if (pendingAction === 'edit') {
-        setIsViewOnly(false);
-        setIsModalOpen(true);
+      try {
+        if (pendingAction === 'delete' && selectedId) {
+          await pb.collection('testedopezinho_history').delete(selectedId);
+          setHistory(prev => prev.filter(item => item.id !== selectedId));
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+        } else if (pendingAction === 'add') {
+          setSelectedRecord(null);
+          setIsViewOnly(false);
+          setIsModalOpen(true);
+        } else if (pendingAction === 'edit') {
+          setIsViewOnly(false);
+          setIsModalOpen(true);
+        }
+        setIsPasswordModalOpen(false);
+        setPendingAction(null);
+        setPassword("");
+        setConfirmStep(1);
+      } catch (err) {
+        setError("Erro ao processar operação no servidor.");
       }
-      setIsPasswordModalOpen(false);
-      setPendingAction(null);
-      setPassword("");
-      setConfirmStep(1);
     } else {
       setError("Senha incorreta!");
     }
   };
 
-  const handleView = () => {
+  const handleView = (record: any) => {
+    setSelectedRecord(record);
     setIsViewOnly(true);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (id: number) => {
-    setSelectedId(id);
+  const handleEdit = (record: any) => {
+    setSelectedRecord(record);
+    setSelectedId(record.id);
     setPendingAction('edit');
     setConfirmStep(2);
     setIsPasswordModalOpen(true);
@@ -114,7 +144,13 @@ export function History() {
 
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-xl bg-surface-bright relative z-10 w-full min-h-screen">
-      <RegistrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isViewOnly={isViewOnly} />
+      <RegistrationModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        isViewOnly={isViewOnly}
+        initialData={selectedRecord}
+        onSave={fetchHistory}
+      />
       
       {/* Password Modal */}
       {isPasswordModalOpen && (
@@ -304,96 +340,96 @@ export function History() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/10">
-              {filteredHistory.map((item) => (
-                <tr key={item.id} className="hover:bg-surface-bright/50 transition-colors group">
-                  <td className="px-xl py-lg align-middle text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-2 text-on-surface font-bold">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        {item.date}
-                      </div>
-                      <span className="text-[12px] text-on-surface-variant">
-                        {item.day} de {item.month}, {item.year}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg align-middle">
-                    <div className="flex flex-wrap justify-center gap-1.5 max-w-xl mx-auto">
-                      <div className="w-full mb-1 flex justify-center items-center gap-2">
-                        <span className="bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                          {item.units.length} Unidades
-                        </span>
-                      </div>
-                      {item.units.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex items-center gap-1 px-2 py-0.5 bg-surface-bright border border-outline-variant/20 rounded text-[12px] text-on-surface-variant hover:border-primary/30 transition-colors">
-                            <span className="font-bold text-on-surface truncate max-w-[150px]" title={item.units[0].name}>
-                              {abbreviate(item.units[0].name)}
-                            </span>
-                            <span className="text-primary font-bold">({item.units[0].count})</span>
-                          </div>
-                          {item.units.length > 1 && (
-                            <span className="text-primary font-black text-sm">
-                              + {item.units.length - 1}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg text-center align-middle">
-                    <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-primary/10 text-primary font-code-numeral font-bold border border-primary/20">
-                      {item.totalCount}
-                    </span>
-                  </td>
-                  <td className="px-xl py-lg align-middle whitespace-nowrap text-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                        <Clock className="w-3 h-3 text-primary/50" />
-                        <span className="font-semibold uppercase tracking-tighter">Criação:</span>
-                        <span className="font-code-numeral">{item.createdAt}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                        <Edit2 className="w-3 h-3 text-tertiary/50" />
-                        <span className="font-semibold uppercase tracking-tighter">Edição:</span>
-                        <span className="font-code-numeral">{item.updatedAt}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-xl py-lg align-middle">
-                    <div className="flex justify-center gap-1">
-                      <button 
-                        onClick={handleView}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Visualizar"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => navigate('/impressao', { state: { record: item } })}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Imprimir"
-                      >
-                        <Printer className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(item.id)}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-all text-on-surface-variant hover:text-primary"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClick(item.id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg transition-all text-on-surface-variant hover:text-red-500"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-xl py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                      <p className="text-on-surface-variant font-bold animate-pulse">CARREGANDO HISTÓRICO...</p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : filteredHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-xl py-20 text-center text-on-surface-variant font-medium">
+                    Nenhum registro encontrado para este período.
+                  </td>
+                </tr>
+              ) : (
+                filteredHistory.map((item) => (
+                  <tr key={item.id} className="hover:bg-surface-bright/50 transition-colors group">
+                    <td className="px-xl py-lg align-middle text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-2 text-on-surface font-bold">
+                          <Calendar className="w-4 h-4 text-primary" />
+                          {item.date}
+                        </div>
+                        <span className="text-[12px] text-on-surface-variant">
+                          {item.day} de {item.month}, {item.year}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle">
+                      <div className="flex flex-wrap justify-center gap-2 max-w-[400px] mx-auto">
+                        {(item.units || []).slice(0, 3).map((unit: any, idx: number) => (
+                          <span key={idx} className="px-3 py-1 bg-surface-container-high rounded-full text-[11px] font-bold text-on-surface-variant border border-outline-variant/30">
+                            {abbreviate(unit.name)}: {unit.count}
+                          </span>
+                        ))}
+                        {(item.units || []).length > 3 && (
+                          <span className="px-3 py-1 bg-primary/5 rounded-full text-[11px] font-bold text-primary border border-primary/20">
+                            +{(item.units || []).length - 3} unidades
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle text-center">
+                      <div className="font-code-numeral text-lg font-black text-on-surface">
+                        {item.totalCount}
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100">
+                          <Clock className="w-3 h-3" />
+                          Criado: {item.createdAt}
+                        </div>
+                        {item.updatedAt !== item.createdAt && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant/60">
+                            <Edit2 className="w-2.5 h-2.5" />
+                            Editado: {item.updatedAt}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-xl py-lg align-middle text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => handleView(item)}
+                          className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          title="Visualizar"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(item)}
+                          className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(item.id)}
+                          className="p-2.5 text-on-surface-variant hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
