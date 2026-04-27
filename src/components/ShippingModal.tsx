@@ -1,7 +1,7 @@
 import { X, Save, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
-import { pb } from "../lib/pocketbase";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
 const UNITS = [
   "CF ALICE REGO",
@@ -86,6 +86,13 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const authenticated = await ensureAuth();
+      if (!authenticated) {
+        alert("Falha na autenticação com o servidor.");
+        setIsSaving(false);
+        return;
+      }
+
       const shippingList = UNITS.map(unit => {
         const items: Record<string, number> = {};
         let hasItems = false;

@@ -3,7 +3,7 @@ import { Plus, Calendar, TrendingUp, History, Calculator, BarChart3, PieChart as
 import { RegistrationModal } from "./RegistrationModal";
 import { cn } from "../lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, LabelList } from 'recharts';
-import { pb } from "../lib/pocketbase";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
 const COLORS = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af'];
 
@@ -18,12 +18,10 @@ export function Dashboard() {
 
     async function fetchData() {
       try {
-        // Auth if not logged in
-        if (!pb.authStore.isValid) {
-          await pb.collection('users').authWithPassword(
-            import.meta.env.VITE_PB_LOGIN,
-            import.meta.env.VITE_PB_PASSWORD
-          );
+        const authenticated = await ensureAuth();
+        if (!authenticated) {
+          if (!isCancelled) setIsLoading(false);
+          return;
         }
 
         const [historyRecords, shippingRecords] = await Promise.all([

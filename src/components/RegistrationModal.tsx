@@ -1,7 +1,7 @@
 import { X, Save, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
-import { pb } from "../lib/pocketbase";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
 const UNITS = [
   "CF ALICE REGO",
@@ -74,6 +74,13 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const authenticated = await ensureAuth();
+      if (!authenticated) {
+        alert("Falha na autenticação com o servidor.");
+        setIsSaving(false);
+        return;
+      }
+
       const units = UNITS.map(name => ({
         name,
         count: Number(unitCounts[name]) || 0

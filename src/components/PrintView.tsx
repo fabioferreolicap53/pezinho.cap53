@@ -1,7 +1,7 @@
-import { Printer, Download, ArrowLeft, Calendar } from "lucide-react";
+import { Printer, Download, ArrowLeft, Calendar, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useMemo, useRef } from "react";
-import { SHARED_HISTORY } from "../data/history";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
 const UNITS = [
   "CF ALICE REGO",
@@ -54,24 +54,53 @@ export function PrintView() {
 
   const [selectedYear, setSelectedYear] = useState(passedRecord?.year || "2026");
   const [selectedMonth, setSelectedMonth] = useState(passedRecord?.month || "Abril");
-  const [selectedDay, setSelectedDay] = useState(passedRecord?.day || "24");
+  const [selectedDay, setSelectedDay] = useState(passedRecord?.day || "");
+  const [dbRecord, setDbRecord] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    async function fetchRecord() {
+      if (passedRecord) return;
+      if (!selectedYear || !selectedMonth || !selectedDay) {
+        setDbRecord(null);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const authenticated = await ensureAuth();
+        if (!authenticated) throw new Error("Auth failed");
+
+        const records = await pb.collection('testedopezinho_history').getList(1, 1, {
+          filter: `year = "${selectedYear}" && month = "${selectedMonth}" && day = "${selectedDay}"`,
+        });
+
+        if (records.items.length > 0) {
+          setDbRecord(records.items[0]);
+        } else {
+          setDbRecord(null);
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRecord();
+  }, [passedRecord, selectedYear, selectedMonth, selectedDay]);
+
   const filteredData = useMemo(() => {
-    // Se veio um registro específico, usa ele. Caso contrário, busca no histórico.
-    const record = passedRecord || SHARED_HISTORY.find(h => 
-      h.year === selectedYear && 
-      h.month === selectedMonth && 
-      h.day === selectedDay
-    );
+    const record = passedRecord || dbRecord;
     
     if (!record) return {};
     
-    return record.units.reduce((acc, curr) => {
+    return record.units.reduce((acc: any, curr: any) => {
       acc[curr.name] = curr.count;
       return acc;
     }, {} as Record<string, number>);
-  }, [passedRecord, selectedYear, selectedMonth, selectedDay]);
+  }, [passedRecord, dbRecord]);
 
   const total = Object.values(filteredData).reduce((a, b) => a + b, 0);
 
@@ -110,6 +139,63 @@ export function PrintView() {
           </div>
           Voltar ao Histórico
         </Link>
+
+        {!passedRecord && (
+          <div className="flex items-center gap-6 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-xs">
+                <label className="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">
+                  ANO <span className="text-red-400 ml-1">*</span>
+                </label>
+                <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-32 text-on-surface transition-all"
+                >
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-xs">
+                <label className="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">
+                  MÊS <span className="text-red-400 ml-1">*</span>
+                </label>
+                <select 
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-40 text-on-surface transition-all"
+                >
+                  {MONTHS.map(m => (
+                    <option key={m.name} value={m.name}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-xs">
+                <label className="font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider">
+                  DIA <span className="text-red-400 ml-1">*</span>
+                </label>
+                <input 
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-24 text-on-surface transition-all"
+                  placeholder="Ex: 24"
+                />
+              </div>
+              {isLoading && (
+                <div className="flex items-end pb-2">
+                  <Loader2 className="w-5 h-5 text-[#001b3d] animate-spin" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <button 
           onClick={handlePrint}
           className="flex items-center gap-2 px-8 py-2.5 bg-[#001b3d] text-white rounded-xl hover:bg-[#002b5c] transition-all shadow-lg shadow-[#001b3d]/20 font-bold"

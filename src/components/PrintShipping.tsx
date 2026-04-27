@@ -1,34 +1,113 @@
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
-const ITEMS = [
-  "Filtro Vermelho",
-  "Filtro Azul",
-  "Lanceta",
-  "Envelope"
+const MONTHS = [
+  { name: "Janeiro", value: "01" },
+  { name: "Fevereiro", value: "02" },
+  { name: "Março", value: "03" },
+  { name: "Abril", value: "04" },
+  { name: "Maio", value: "05" },
+  { name: "Junho", value: "06" },
+  { name: "Julho", value: "07" },
+  { name: "Agosto", value: "08" },
+  { name: "Setembro", value: "09" },
+  { name: "Outubro", value: "10" },
+  { name: "Novembro", value: "11" },
+  { name: "Dezembro", value: "12" },
 ];
 
 export function PrintShipping() {
   const location = useLocation();
-  const shippingData = location.state?.shipping;
+  const passedShipping = location.state?.shipping;
 
-  if (!shippingData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
-        <p className="text-[#001b3d] font-bold mb-4">Nenhum dado de envio encontrado.</p>
-        <Link to="/envio-unidades" className="px-6 py-2 bg-[#001b3d] text-white rounded-xl font-bold">
-          Voltar ao Envio
-        </Link>
-      </div>
-    );
-  }
+  const [selectedYear, setSelectedYear] = useState(passedShipping?.year || "2026");
+  const [selectedMonth, setSelectedMonth] = useState(passedShipping?.month || "Abril");
+  const [selectedDay, setSelectedDay] = useState(passedShipping?.day || "");
+  const [dbRecord, setDbRecord] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function fetchRecord() {
+      if (passedShipping) return;
+      if (!selectedYear || !selectedMonth || !selectedDay) {
+        setDbRecord(null);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const authenticated = await ensureAuth();
+        if (!authenticated) throw new Error("Auth failed");
+
+        const records = await pb.collection('testedopezinho_shipping').getList(1, 1, {
+          filter: `year = "${selectedYear}" && month = "${selectedMonth}" && day = "${selectedDay}"`,
+        });
+
+        if (records.items.length > 0) {
+          setDbRecord(records.items[0]);
+        } else {
+          setDbRecord(null);
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRecord();
+  }, [passedShipping, selectedYear, selectedMonth, selectedDay]);
+
+  const shippingData = passedShipping || dbRecord;
 
   const handlePrint = () => {
     const originalTitle = document.title;
-    document.title = `Envio_Insumos_${shippingData.day}_${shippingData.month}_${shippingData.year}`;
+    const monthVal = MONTHS.find(m => m.name === selectedMonth)?.value || "01";
+    document.title = `Envio_Insumos_${selectedDay}_${monthVal}_${selectedYear}`;
     window.print();
     document.title = originalTitle;
   };
+
+  if (!shippingData && !isLoading && !passedShipping) {
+    return (
+      <main className="flex-1 overflow-y-auto p-xl bg-slate-50 min-h-screen">
+        <div className="max-w-[850px] mx-auto mb-lg bg-white p-xl rounded-3xl border border-outline-variant shadow-xl flex justify-between items-center">
+          <Link to="/envio-unidades" className="flex items-center gap-2 text-[#001b3d] hover:text-[#004a99] transition-colors font-bold group">
+            <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
+            Voltar ao Envio
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Ano</label>
+              <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="border rounded-lg px-2 py-1 text-sm">
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Mês</label>
+              <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="border rounded-lg px-2 py-1 text-sm">
+                {MONTHS.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Dia</label>
+              <input type="number" value={selectedDay} onChange={e => setSelectedDay(e.target.value)} className="border rounded-lg px-2 py-1 text-sm w-16" placeholder="24" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-[850px] mx-auto bg-white p-20 rounded-3xl border border-slate-200 text-center">
+          <p className="text-[#001b3d] font-bold">Nenhum registro encontrado para este período.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-y-auto p-xl bg-slate-50 min-h-screen">
@@ -40,6 +119,57 @@ export function PrintShipping() {
           </div>
           Voltar ao Envio
         </Link>
+
+        {!passedShipping && (
+          <div className="flex items-center gap-6 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-xs">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Ano</label>
+                <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-32 text-on-surface transition-all"
+                >
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-xs">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Mês</label>
+                <select 
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-40 text-on-surface transition-all"
+                >
+                  {MONTHS.map(m => (
+                    <option key={m.name} value={m.name}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-xs">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Dia</label>
+                <input 
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  className="border border-outline-variant/50 rounded-lg px-4 py-2 font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none bg-white w-24 text-on-surface transition-all"
+                  placeholder="Ex: 24"
+                />
+              </div>
+              {isLoading && (
+                <div className="flex items-end pb-2">
+                  <Loader2 className="w-5 h-5 text-[#001b3d] animate-spin" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <button 
           onClick={handlePrint}
           className="flex items-center gap-2 px-8 py-2.5 bg-[#001b3d] text-white rounded-xl hover:bg-[#002b5c] transition-all shadow-lg shadow-[#001b3d]/20 font-bold"

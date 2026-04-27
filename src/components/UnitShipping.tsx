@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { ShippingModal } from "./ShippingModal";
 import { cn } from "../lib/utils";
 import { Link, useNavigate } from "react-router-dom";
-import { pb } from "../lib/pocketbase";
+import { pb, ensureAuth } from "../lib/pocketbase";
 
 export function UnitShipping() {
   const navigate = useNavigate();
@@ -28,12 +28,13 @@ export function UnitShipping() {
 
   const fetchHistory = async () => {
     try {
-      if (!pb.authStore.isValid) {
-        await pb.collection('users').authWithPassword(
-          import.meta.env.VITE_PB_LOGIN,
-          import.meta.env.VITE_PB_PASSWORD
-        );
+      const authenticated = await ensureAuth();
+      if (!authenticated) {
+        console.error("Falha na autenticação. Verifique o console.");
+        setIsLoading(false);
+        return;
       }
+
       const records = await pb.collection('testedopezinho_shipping').getFullList({
         sort: '-created',
       });

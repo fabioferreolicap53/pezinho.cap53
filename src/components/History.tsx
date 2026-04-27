@@ -2,7 +2,7 @@ import { History as HistoryIcon, Search, Calendar, MapPin, Edit2, Trash2, Clock,
 import { useState, useMemo, useEffect } from "react";
 import { RegistrationModal } from "./RegistrationModal";
 import { cn } from "../lib/utils";
-import { pb } from "../lib/pocketbase";
+import { pb, ensureAuth } from "../lib/pocketbase";
 import { Link, useNavigate } from "react-router-dom";
 
 export function History() {
@@ -27,12 +27,13 @@ export function History() {
 
   const fetchHistory = async () => {
     try {
-      if (!pb.authStore.isValid) {
-        await pb.collection('users').authWithPassword(
-          import.meta.env.VITE_PB_LOGIN,
-          import.meta.env.VITE_PB_PASSWORD
-        );
+      const authenticated = await ensureAuth();
+      if (!authenticated) {
+        console.error("Falha na autenticação. Verifique o console.");
+        setIsLoading(false);
+        return;
       }
+
       const records = await pb.collection('testedopezinho_history').getFullList({
         sort: '-created',
       });
