@@ -183,20 +183,20 @@ export function PrintShipping() {
 
       {/* Print Document Area */}
       <div className="max-w-[850px] mx-auto bg-white shadow-2xl print:shadow-none print:max-w-full overflow-hidden border border-slate-200 print:border-none">
-        {/* Blue Header Banner */}
-        <div className="bg-[#001b3d] p-4 flex justify-between items-center text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24"></div>
+        {/* Header Banner - Optimized for ink saving */}
+        <div className="bg-[#001b3d] print:bg-white p-4 flex justify-between items-center text-white print:text-[#001b3d] relative overflow-hidden print:border-b-2 print:border-[#001b3d]">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24 print:hidden"></div>
           
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 bg-white p-1 rounded-lg shadow-xl flex items-center justify-center">
-              <div className="w-full h-full bg-[#001b3d] rounded-lg flex items-center justify-center font-black text-white text-xl italic">
+            <div className="w-12 h-12 bg-white print:bg-white p-1 rounded-lg shadow-xl print:shadow-none flex items-center justify-center border print:border-[#001b3d]">
+              <div className="w-full h-full bg-[#001b3d] print:bg-white rounded-lg flex items-center justify-center font-black text-white print:text-[#001b3d] text-xl italic">
                 RIO
               </div>
             </div>
             <div>
               <h2 className="text-xl font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="h-[1px] w-6 bg-white/30"></span>
+                <span className="h-[1px] w-6 bg-white/30 print:bg-[#001b3d]/30"></span>
                 <p className="text-[8px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
               </div>
             </div>
@@ -232,10 +232,10 @@ export function PrintShipping() {
           <div className="border-[1.5px] border-[#001b3d] shadow-sm">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-[#001b3d] text-white">
-                  <th className="py-1 px-4 text-[10px] font-black uppercase border-r border-white/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
+                <tr className="bg-[#001b3d] print:bg-white text-white print:text-[#001b3d]">
+                  <th className="py-1 px-4 text-[10px] font-black uppercase border-r border-white/20 print:border-[#001b3d]/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
                   {ITEMS.map(item => (
-                    <th key={item} className="py-1 px-2 text-[10px] font-black uppercase border-r border-white/20 tracking-tighter text-center">
+                    <th key={item} className="py-1 px-2 text-[10px] font-black uppercase border-r border-white/20 print:border-[#001b3d]/20 tracking-tighter text-center">
                       {item.split(' ')[0]}
                     </th>
                   ))}
@@ -256,12 +256,12 @@ export function PrintShipping() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-[#001b3d] text-white">
-                  <td className="py-1.5 px-4 text-[11px] font-black uppercase border-r border-white/20 text-right tracking-widest">
+                <tr className="bg-[#001b3d] print:bg-white text-white print:text-[#001b3d] border-t-2 border-[#001b3d]">
+                  <td className="py-1.5 px-4 text-[11px] font-black uppercase border-r border-white/20 print:border-[#001b3d]/20 text-right tracking-widest">
                     Totais
                   </td>
                   {ITEMS.map(item => (
-                    <td key={item} className="py-1.5 px-2 text-sm font-black text-center bg-[#001b3d] border-r border-white/10">
+                    <td key={item} className="py-1.5 px-2 text-sm font-black text-center bg-[#001b3d] print:bg-white border-r border-white/10 print:border-[#001b3d]/10">
                       {shippingData.shippings.reduce((acc, curr) => acc + (curr.items[item] || 0), 0)}
                     </td>
                   ))}
