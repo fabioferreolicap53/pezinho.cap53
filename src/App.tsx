@@ -43,9 +43,9 @@ export default function App() {
 
   return (
     <Router>
-      <div className="bg-surface-bright font-body-md text-on-surface antialiased min-h-[100dvh] flex flex-col overflow-hidden">
+      <div className="bg-surface-bright font-body-md text-on-surface antialiased min-h-[100dvh] flex flex-col overflow-hidden print:bg-white">
         <Header onLogout={handleLogout} />
-        <div className="flex flex-1 overflow-hidden h-full pt-16">
+        <div className="flex flex-1 overflow-hidden h-full pt-16 print:pt-0">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/relatorios" element={<Reports />} />
