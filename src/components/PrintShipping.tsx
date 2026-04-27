@@ -184,44 +184,44 @@ export function PrintShipping() {
       {/* Print Document Area */}
       <div className="max-w-[850px] mx-auto bg-white shadow-2xl print:shadow-none print:max-w-full overflow-hidden border border-slate-200 print:border-none">
         {/* Blue Header Banner */}
-        <div className="bg-[#001b3d] p-6 flex justify-between items-center text-white relative overflow-hidden">
+        <div className="bg-[#001b3d] p-4 flex justify-between items-center text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24"></div>
           
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 bg-white p-1 rounded-xl shadow-xl flex items-center justify-center">
-              <div className="w-full h-full bg-[#001b3d] rounded-lg flex items-center justify-center font-black text-white text-2xl italic">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-white p-1 rounded-lg shadow-xl flex items-center justify-center">
+              <div className="w-full h-full bg-[#001b3d] rounded-lg flex items-center justify-center font-black text-white text-xl italic">
                 RIO
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
+              <h2 className="text-xl font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="h-[1px] w-6 bg-white/30"></span>
-                <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
+                <p className="text-[8px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
               </div>
             </div>
           </div>
           <div className="text-right relative z-10 hidden sm:block">
-            <p className="text-xs font-bold italic">CAP 5.3 / DAPS</p>
+            <p className="text-[10px] font-bold italic opacity-70">CAP 5.3 / DAPS</p>
           </div>
         </div>
 
         {/* Document Content */}
-        <div className="p-10 space-y-10 font-serif text-[#001b3d]">
-          <div className="space-y-3 text-center">
-            <div className="inline-block px-4 py-1 border-2 border-[#001b3d] text-[10px] font-black uppercase tracking-widest mb-2">
+        <div className="p-6 space-y-4 font-serif text-[#001b3d]">
+          <div className="space-y-2 text-center">
+            <div className="inline-block px-3 py-0.5 border-2 border-[#001b3d] text-[9px] font-black uppercase tracking-widest mb-1">
               Consolidado de Insumos
             </div>
-            <div className="space-y-1 text-[15px]">
-              <p className="font-bold text-xs opacity-80">De: S/SUBPAV/CAP 5.3 / DAPS</p>
-              <p className="font-black text-xl uppercase underline underline-offset-8 decoration-4">
+            <div className="space-y-0.5 text-[14px]">
+              <p className="font-bold text-[10px] opacity-80 uppercase">De: S/SUBPAV/CAP 5.3 / DAPS</p>
+              <p className="font-black text-lg uppercase underline underline-offset-4 decoration-2">
                 DATA: {shippingData.day} / {shippingData.month} / {shippingData.year}
               </p>
-              <p className="font-bold text-sm mt-2">Assunto: Encaminhamento de Insumos às Unidades</p>
+              <p className="font-bold text-xs mt-1">Assunto: Encaminhamento de Insumos às Unidades</p>
             </div>
           </div>
 
-          <div className="space-y-3 text-[14px] leading-relaxed max-w-2xl mx-auto text-center italic">
+          <div className="space-y-2 text-[12px] leading-tight max-w-2xl mx-auto text-center italic">
             <p>
               Informamos que estamos encaminhando os insumos para o <span className="font-black not-italic">Programa de Triagem Neonatal</span>, 
               referentes às Unidades de Saúde da <span className="font-black not-italic">CAP 5.3</span> listadas abaixo:
@@ -229,26 +229,26 @@ export function PrintShipping() {
           </div>
 
           {/* Table */}
-          <div className="border-[2px] border-[#001b3d]">
+          <div className="border-[1.5px] border-[#001b3d] shadow-sm">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#001b3d] text-white">
-                  <th className="py-2.5 px-6 text-[11px] font-black uppercase border-r border-white/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
+                  <th className="py-1 px-4 text-[10px] font-black uppercase border-r border-white/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
                   {ITEMS.map(item => (
-                    <th key={item} className="py-2.5 px-4 text-[11px] font-black uppercase border-r border-white/20 tracking-tighter text-center">
+                    <th key={item} className="py-1 px-2 text-[10px] font-black uppercase border-r border-white/20 tracking-tighter text-center">
                       {item.split(' ')[0]}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="text-[12px]">
+              <tbody className="text-[11px]">
                 {shippingData.shippings.map((ship, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-[#001b3d]/[0.02]"}>
-                    <td className="py-1.5 px-6 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tight">
+                    <td className="py-0.5 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tight leading-none h-5">
                       {ship.unit}
                     </td>
                     {ITEMS.map(item => (
-                      <td key={item} className="py-1.5 px-4 font-black text-center border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 text-sm">
+                      <td key={item} className="py-0.5 px-2 font-black text-center border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 text-[12px] h-5">
                         {ship.items[item] || 0}
                       </td>
                     ))}
@@ -257,11 +257,11 @@ export function PrintShipping() {
               </tbody>
               <tfoot>
                 <tr className="bg-[#001b3d] text-white">
-                  <td className="py-3 px-6 text-[12px] font-black uppercase border-r border-white/20 text-right tracking-widest">
+                  <td className="py-1.5 px-4 text-[11px] font-black uppercase border-r border-white/20 text-right tracking-widest">
                     Totais
                   </td>
                   {ITEMS.map(item => (
-                    <td key={item} className="py-3 px-4 text-base font-black text-center bg-[#001b3d] border-r border-white/10">
+                    <td key={item} className="py-1.5 px-2 text-sm font-black text-center bg-[#001b3d] border-r border-white/10">
                       {shippingData.shippings.reduce((acc, curr) => acc + (curr.items[item] || 0), 0)}
                     </td>
                   ))}

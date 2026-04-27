@@ -208,44 +208,44 @@ export function PrintView() {
       {/* Print Document Area */}
       <div ref={printRef} className="max-w-[850px] mx-auto bg-white shadow-2xl print:shadow-none print:max-w-full overflow-hidden border border-slate-200 print:border-none">
         {/* Blue Header Banner */}
-        <div className="bg-[#001b3d] p-4 flex justify-between items-center text-white relative overflow-hidden">
+        <div className="bg-[#001b3d] p-3 flex justify-between items-center text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24"></div>
           
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-12 h-12 bg-white p-1 rounded-lg shadow-xl flex items-center justify-center">
-              <div className="w-full h-full bg-[#001b3d] rounded-md flex items-center justify-center font-black text-white text-xl italic">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-10 h-10 bg-white p-1 rounded-lg shadow-xl flex items-center justify-center">
+              <div className="w-full h-full bg-[#001b3d] rounded-md flex items-center justify-center font-black text-white text-lg italic">
                 RIO
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
+              <h2 className="text-lg font-black leading-tight tracking-tight uppercase">Saúde Pública Carioca</h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="h-[1px] w-6 bg-white/30"></span>
-                <p className="text-[9px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
+                <p className="text-[8px] opacity-80 uppercase tracking-[0.2em] font-bold">Prefeitura do Rio de Janeiro</p>
               </div>
             </div>
           </div>
           <div className="text-right relative z-10 hidden sm:block">
-            <p className="text-[10px] font-bold italic opacity-70">CAP 5.3 / DAPS</p>
+            <p className="text-[9px] font-bold italic opacity-70">CAP 5.3 / DAPS</p>
           </div>
         </div>
 
         {/* Document Content */}
-        <div className="p-6 space-y-4 font-serif text-[#001b3d]">
-          <div className="space-y-1.5 text-center">
-            <div className="inline-block px-3 py-0.5 border-2 border-[#001b3d] text-[9px] font-black uppercase tracking-widest mb-1">
+        <div className="p-4 space-y-3 font-serif text-[#001b3d]">
+          <div className="space-y-1 text-center">
+            <div className="inline-block px-3 py-0.5 border-2 border-[#001b3d] text-[8px] font-black uppercase tracking-widest mb-1">
               Consolidado de Exames
             </div>
-            <div className="space-y-0.5 text-[14px]">
-              <p className="font-bold text-[10px] opacity-80">De: S/SUBPAV/CAP 5.3 / DAPS</p>
-              <p className="font-black text-lg uppercase underline underline-offset-4 decoration-2">
+            <div className="space-y-0 text-[13px]">
+              <p className="font-bold text-[9px] opacity-80 uppercase">De: S/SUBPAV/CAP 5.3 / DAPS</p>
+              <p className="font-black text-base uppercase underline underline-offset-4 decoration-2">
                 DATA: {selectedDay} / {monthValue} / {selectedYear}
               </p>
-              <p className="font-bold text-xs mt-1">Assunto: Encaminhamento de Exames do Teste do Pezinho</p>
+              <p className="font-bold text-[11px] mt-1">Assunto: Encaminhamento de Exames do Teste do Pezinho</p>
             </div>
           </div>
 
-          <div className="space-y-1.5 text-[12px] leading-tight max-w-2xl mx-auto text-center italic">
+          <div className="space-y-1 text-[11px] leading-tight max-w-2xl mx-auto text-center italic">
             <p>
               Informamos que estamos encaminhando, por intermédio do portador 
               <span className="font-black not-italic ml-1 border-b border-[#001b3d]">Sr. PAULO DO NASCIMENTO FERREIRA</span>,
@@ -261,17 +261,17 @@ export function PrintView() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#001b3d] text-white">
-                  <th className="py-1 px-4 text-[10px] font-black uppercase border-r border-white/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
-                  <th className="py-1 px-4 text-[10px] font-black uppercase w-24 tracking-[0.2em]">Qtd</th>
+                  <th className="py-0.5 px-4 text-[9px] font-black uppercase border-r border-white/20 tracking-[0.2em] text-left">Unidade de Saúde</th>
+                  <th className="py-0.5 px-4 text-[9px] font-black uppercase w-20 tracking-[0.2em]">Qtd</th>
                 </tr>
               </thead>
-              <tbody className="text-[13.5px]">
+              <tbody className="text-[12px]">
                 {UNITS.map((unit, idx) => (
                   <tr key={unit} className={idx % 2 === 0 ? "bg-white" : "bg-[#001b3d]/[0.01]"}>
-                    <td className="py-0.5 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tighter leading-none">
+                    <td className="py-0 px-4 font-bold text-left border-r border-[#001b3d]/10 border-b border-b-[#001b3d]/5 uppercase tracking-tighter leading-none h-5">
                       {unit}
                     </td>
-                    <td className="py-0.5 px-4 font-black text-center border-b border-b-[#001b3d]/5 text-[13.5px]">
+                    <td className="py-0 px-4 font-black text-center border-b border-b-[#001b3d]/5 text-[12px] h-5">
                       {filteredData[unit] || "—"}
                     </td>
                   </tr>
@@ -279,10 +279,10 @@ export function PrintView() {
               </tbody>
               <tfoot>
                 <tr className="bg-[#001b3d] text-white">
-                  <td className="py-1.5 px-4 text-[11px] font-black uppercase border-r border-white/20 text-right tracking-widest">
+                  <td className="py-1 px-4 text-[10px] font-black uppercase border-r border-white/20 text-right tracking-widest">
                     Total Consolidado
                   </td>
-                  <td className="py-1.5 px-6 text-base font-black text-center bg-[#001b3d]">
+                  <td className="py-1 px-6 text-sm font-black text-center bg-[#001b3d]">
                     {total}
                   </td>
                 </tr>
