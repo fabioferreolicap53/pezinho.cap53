@@ -22,24 +22,42 @@ export async function ensureAuth() {
       return false;
     }
 
-    // Tentar primeiro como Admin (comum em setups de automação/dashboard)
+    // Tentar primeiro como Admin usando o endpoint legado (PocketBase < 0.23)
+    // O SDK 0.26+ usa _superusers por padrão, que não existe em versões antigas
     try {
-      console.log("Tentando login como Admin...");
-      await pb.admins.authWithPassword(email, password);
-      console.log("Login como Admin realizado com sucesso.");
-      return true;
-    } catch (adminError: any) {
-      // Se não for admin, tenta como usuário da coleção 'users'
-      console.log("Falha login Admin, tentando como Usuário...");
-      try {
-        await pb.collection('users').authWithPassword(email, password);
-        console.log("Login como Usuário realizado com sucesso.");
+      console.log("Tentando login como Admin (legacy)...");
+      const authData = await pb.send('/api/admins/auth-with-password', {
+        method: 'POST',
+        body: { identity: email, password: password },
+      });
+      
+      if (authData?.token && authData?.admin) {
+        pb.authStore.save(authData.token, authData.admin);
+        console.log("Login como Admin (legacy) realizado com sucesso.");
         return true;
-      } catch (userError: any) {
-        console.error("Ambas tentativas de login falharam.");
-        throw userError;
+      }
+    } catch (adminError: any) {
+      console.log("Falha login Admin legacy, tentando como Usuário ou Superuser...");
+      
+      // Fallback para o comportamento padrão do SDK (Superusers ou Users)
+      try {
+        // Tenta Superusers (PB >= 0.23)
+        await pb.admins.authWithPassword(email, password);
+        console.log("Login como Superuser realizado com sucesso.");
+        return true;
+      } catch (superError: any) {
+        try {
+          // Tenta Coleção Users (Auth collection padrão)
+          await pb.collection('users').authWithPassword(email, password);
+          console.log("Login como Usuário realizado com sucesso.");
+          return true;
+        } catch (userError: any) {
+          console.error("Todas as tentativas de login falharam.");
+          throw userError;
+        }
       }
     }
+    return false;
   } catch (error) {
     console.error("Erro na autenticação PocketBase:", error);
     return false;
