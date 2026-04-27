@@ -18,6 +18,8 @@ const MONTHS = [
   { name: "Dezembro", value: "12" },
 ];
 
+const ITEMS = ["Filtro Vermelho", "Filtro Azul", "Lanceta", "Envelope"];
+
 export function PrintShipping() {
   const location = useLocation();
   const passedShipping = location.state?.shipping;

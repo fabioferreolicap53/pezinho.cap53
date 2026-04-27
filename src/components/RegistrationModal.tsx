@@ -69,7 +69,7 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
 
   if (!isOpen) return null;
 
-  const totalCount = Object.values(unitCounts).reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+  const totalCount = Object.values(unitCounts).reduce((acc: number, curr: any) => acc + (Number(curr) || 0), 0);
 
   const handleSave = async () => {
     setIsSaving(true);

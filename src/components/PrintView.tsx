@@ -102,7 +102,7 @@ export function PrintView() {
     }, {} as Record<string, number>);
   }, [passedRecord, dbRecord]);
 
-  const total = Object.values(filteredData).reduce((a, b) => a + b, 0);
+  const total = Object.values(filteredData).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
 
   const monthValue = MONTHS.find(m => m.name === selectedMonth)?.value || "01";
 

@@ -187,11 +187,16 @@ export function Dashboard() {
   }, [filteredHistory, selectedUnit]);
 
   const totalSupplies = useMemo(() => {
-    return filteredShipping.reduce((acc, curr) => {
+    return filteredShipping.reduce((acc: number, curr: any) => {
       let count = 0;
       curr.shippings?.forEach((s: any) => {
         if (selectedUnit !== "TODAS AS UNIDADES" && s.unit !== selectedUnit) return;
-        count += Object.values(s.items || {}).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
+        const items = s.items || {};
+        let sumItems = 0;
+        Object.values(items).forEach((val: any) => {
+          sumItems += (Number(val) || 0);
+        });
+        count += sumItems;
       });
       return acc + count;
     }, 0);

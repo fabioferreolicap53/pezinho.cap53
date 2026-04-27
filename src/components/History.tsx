@@ -442,6 +442,13 @@ export function History() {
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button 
+                          onClick={() => navigate('/impressao', { state: { record: item } })}
+                          className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          title="Imprimir"
+                        >
+                          <Printer className="w-5 h-5" />
+                        </button>
+                        <button 
                           onClick={() => handleDeleteClick(item.id)}
                           className="p-2.5 text-on-surface-variant hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Excluir"
