@@ -1,4 +1,4 @@
-import { X, Save, Loader2 } from "lucide-react";
+import { X, Save, Loader2, Search } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
 import { pb, ensureAuth } from "../lib/pocketbase";
@@ -54,6 +54,7 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
   const [day, setDay] = useState("");
   const [shippings, setShippings] = useState<Record<string, Record<string, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (initialData) {
@@ -242,10 +243,30 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
 
           {/* Unit Items Input */}
           <div className="bg-surface-bright/50 p-lg border border-outline-variant/30 rounded-xl shadow-sm">
-            <h4 className="font-label-caps text-label-caps text-on-surface mb-lg flex items-center gap-2">
-              <span className="w-1 h-4 bg-primary rounded-full"></span>
-              Materiais por Unidade
-            </h4>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-lg gap-4">
+              <h4 className="font-label-caps text-label-caps text-on-surface flex items-center gap-2">
+                <span className="w-1 h-4 bg-primary rounded-full"></span>
+                Materiais por Unidade
+              </h4>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                <input
+                  type="text"
+                  placeholder="Buscar unidade..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
             
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
@@ -258,7 +279,9 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
-                  {UNITS.map(unit => (
+                  {UNITS.filter(unit => 
+                    unit.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).map(unit => (
                     <tr key={unit} className="hover:bg-surface-container-high/30 transition-colors">
                       <td className="py-4 px-4 font-body-md text-on-surface font-medium">{unit}</td>
                       {ITEMS.map(item => (
