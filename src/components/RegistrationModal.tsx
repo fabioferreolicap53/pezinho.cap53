@@ -42,8 +42,11 @@ interface RegistrationModalProps {
 }
 
 export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initialData, onSave }: RegistrationModalProps) {
-  const [year, setYear] = useState("2026");
-  const [month, setMonth] = useState("Abril");
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [month, setMonth] = useState([
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ][new Date().getMonth()]);
   const [day, setDay] = useState("");
   const [unitCounts, setUnitCounts] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -51,8 +54,11 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
 
   useEffect(() => {
     if (initialData) {
-      setYear(initialData.year || "2026");
-      setMonth(initialData.month || "Abril");
+      setYear(initialData.year || String(new Date().getFullYear()));
+      setMonth(initialData.month || [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ][new Date().getMonth()]);
       setDay(initialData.day || "");
       const counts: Record<string, string> = {};
       (initialData.units || []).forEach((u: any) => {
@@ -61,8 +67,11 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
       setUnitCounts(counts);
     } else {
       const now = new Date();
-      setYear("2026");
-      setMonth("Abril");
+      setYear(String(now.getFullYear()));
+      setMonth([
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ][now.getMonth()]);
       setDay(String(now.getDate()).padStart(2, '0'));
       setUnitCounts({});
     }

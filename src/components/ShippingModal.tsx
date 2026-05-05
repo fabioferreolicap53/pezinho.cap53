@@ -49,8 +49,11 @@ interface ShippingModalProps {
 }
 
 export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData, onSave }: ShippingModalProps) {
-  const [year, setYear] = useState("2026");
-  const [month, setMonth] = useState("Abril");
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [month, setMonth] = useState([
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ][new Date().getMonth()]);
   const [day, setDay] = useState("");
   const [shippings, setShippings] = useState<Record<string, Record<string, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -58,8 +61,11 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
 
   useEffect(() => {
     if (initialData) {
-      setYear(initialData.year || "2026");
-      setMonth(initialData.month || "Abril");
+      setYear(initialData.year || String(new Date().getFullYear()));
+      setMonth(initialData.month || [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ][new Date().getMonth()]);
       setDay(initialData.day || "");
       const shippingData: Record<string, Record<string, string>> = {};
       (initialData.shippings || []).forEach((s: any) => {
@@ -71,8 +77,11 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
       setShippings(shippingData);
     } else {
       const now = new Date();
-      setYear("2026");
-      setMonth("Abril");
+      setYear(String(now.getFullYear()));
+      setMonth([
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ][now.getMonth()]);
       setDay(String(now.getDate()).padStart(2, '0'));
       setShippings({});
     }

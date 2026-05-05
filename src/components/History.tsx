@@ -20,8 +20,11 @@ export function History() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingAction, setPendingAction] = useState<'delete' | 'add' | 'edit' | null>(null);
   const [confirmStep, setConfirmStep] = useState<1 | 2>(1);
-  const [selectedYear, setSelectedYear] = useState("2026");
-  const [selectedMonth, setSelectedMonth] = useState("Abril");
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState([
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ][new Date().getMonth()]);
   const [selectedDay, setSelectedDay] = useState("");
   const [error, setError] = useState("");
 
