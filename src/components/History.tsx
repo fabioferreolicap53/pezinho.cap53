@@ -72,7 +72,7 @@ export function History() {
     if (password === "daps2022") {
       try {
         if (pendingAction === 'delete' && selectedId) {
-          await pb.collection('testedopezinho_history').delete(selectedId);
+          await pb.collection('testedopezinho_history').delete(selectedId, { requestKey: null });
           setHistory(prev => prev.filter(item => item.id !== selectedId));
           setShowSuccess(true);
           setTimeout(() => setShowSuccess(false), 3000);
