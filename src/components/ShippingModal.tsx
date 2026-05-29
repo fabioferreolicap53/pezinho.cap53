@@ -133,16 +133,22 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
       const monthIndex = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].indexOf(month) + 1;
       const formattedDate = `${day}/${String(monthIndex).padStart(2, '0')}/${year}`;
 
-      const data = {
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      const data: any = {
         date: formattedDate,
         day,
         month,
         year,
         totalItems,
         shippings: shippingList,
-        createdAt: initialData?.createdAt || new Date().toLocaleString('pt-BR'),
-        updatedAt: new Date().toLocaleString('pt-BR')
+        updatedAt: timestamp
       };
+
+      if (!initialData?.id) {
+        data.createdAt = timestamp;
+      }
 
       if (initialData?.id) {
         await pb.collection('testedopezinho_shipping').update(initialData.id, data, { requestKey: null });
@@ -151,9 +157,10 @@ export function ShippingModal({ isOpen, onClose, isViewOnly = false, initialData
       }
       onSave?.();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar:", error);
-      alert("Erro ao salvar os dados.");
+      if (error.data) console.error("Detalhes do erro:", error.data);
+      alert("Erro ao salvar os dados. Verifique o console para mais detalhes.");
     } finally {
       setIsSaving(false);
     }
