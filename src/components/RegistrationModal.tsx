@@ -115,22 +115,14 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
       const monthIndex = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].indexOf(month) + 1;
       const formattedDate = `${day}/${String(monthIndex).padStart(2, '0')}/${year}`;
 
-      const now = new Date();
-      const timestamp = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
       const data: any = {
         date: formattedDate,
         day,
         month,
         year,
         totalCount,
-        units,
-        updatedAt: timestamp
+        units
       };
-
-      if (!initialData?.id) {
-        data.createdAt = timestamp;
-      }
 
       if (initialData?.id) {
         await pb.collection('testedopezinho_history').update(initialData.id, data, { requestKey: null });
@@ -141,8 +133,10 @@ export function RegistrationModal({ isOpen, onClose, isViewOnly = false, initial
       onClose();
     } catch (error: any) {
       console.error("Erro ao salvar:", error);
-      if (error.data) console.error("Detalhes do erro:", error.data);
-      alert("Erro ao salvar os dados. Verifique o console para mais detalhes.");
+      if (error.data) {
+        console.error("Detalhes do erro (API):", JSON.stringify(error.data, null, 2));
+      }
+      alert(`Erro ao salvar: ${error.message || "Erro desconhecido"}`);
     } finally {
       setIsSaving(false);
     }

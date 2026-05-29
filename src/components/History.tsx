@@ -88,8 +88,10 @@ export function History() {
         setPendingAction(null);
         setPassword("");
         setConfirmStep(1);
-      } catch (err) {
-        setError("Erro ao processar operação no servidor.");
+      } catch (err: any) {
+        console.error("Erro na operação:", err);
+        if (err.data) console.error("Detalhes do erro (API):", JSON.stringify(err.data, null, 2));
+        setError(`Erro: ${err.message || "Erro no servidor"}`);
       }
     } else {
       setError("Senha incorreta!");
